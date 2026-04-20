@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring MK Gagal — Panduan Tim</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #185FA5; --blue-light: #E6F1FB; --blue-mid: #378ADD; --blue-dark: #0C447C;
+    --green: #3B6D11; --green-light: #EAF3DE; --green-mid: #639922;
+    --amber: #854F0B; --amber-light: #FAEEDA;
+    --red: #A32D2D; --red-light: #FCEBEB;
+    --gray-bg: #F8F7F4; --gray-border: #E2E0DA; --gray-text: #5F5E5A;
+    --text: #1a1a18; --white: #ffffff;
+    --radius: 10px; --radius-lg: 14px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray-bg); color: var(--text); font-size: 15px; line-height: 1.7; }
+
+  header { background: var(--white); border-bottom: 1px solid var(--gray-border); position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 860px; margin: 0 auto; padding: 0 2rem; display: flex; align-items: center; gap: 1rem; height: 56px; }
+  .header-title { font-size: 14px; font-weight: 600; }
+  .header-divider { color: var(--gray-border); }
+  .header-sub { font-size: 13px; color: var(--gray-text); }
+
+  .page-wrapper { max-width: 860px; margin: 0 auto; padding: 2rem 2rem 4rem; }
+
+  .hero { text-align: center; padding: 3rem 0 2.5rem; border-bottom: 1px solid var(--gray-border); margin-bottom: 2.5rem; }
+  .hero h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+  .hero p { color: var(--gray-text); font-size: 15px; max-width: 520px; margin: 0 auto 1.5rem; }
+  .hero-stats { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat-num { font-size: 1.5rem; font-weight: 700; color: var(--blue); }
+  .stat-label { font-size: 11px; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .phase-nav { display: flex; background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius); overflow: hidden; margin-bottom: 2rem; flex-wrap: wrap; }
+  .phase-btn { flex: 1; min-width: 130px; padding: 0.7rem 0.5rem; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--gray-text); border-right: 1px solid var(--gray-border); display: flex; align-items: center; justify-content: center; text-align: center; transition: background 0.15s, color 0.15s; }
+  .phase-btn:last-child { border-right: none; }
+  .phase-btn.active { background: var(--blue); color: var(--white); }
+  .phase-btn:hover:not(.active):not(:disabled) { background: var(--blue-light); color: var(--blue-dark); }
+  .phase-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin-bottom: 4px; }
+  .section-header { margin-bottom: 1.75rem; }
+  .section-header h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.4rem; }
+  .section-header p { color: var(--gray-text); font-size: 14px; }
+
+  /* CARDS */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .card { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius-lg); overflow: hidden; }
+  .card-header { padding: 1rem 1.25rem; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; user-select: none; }
+  .card-header:hover { background: var(--gray-bg); }
+  .card-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 7px; border-radius: 4px; flex-shrink: 0; margin-top: 3px; white-space: nowrap; }
+  .badge-data { background: var(--blue-light); color: var(--blue-dark); }
+  .badge-lookup { background: var(--green-light); color: var(--green); }
+  .badge-schedule { background: var(--amber-light); color: var(--amber); }
+  .card-title-group { flex: 1; min-width: 0; }
+  .card-title { font-size: 13px; font-weight: 600; word-break: break-word; white-space: normal; line-height: 1.4; }
+  .card-subtitle { font-size: 12px; color: var(--gray-text); margin-top: 3px; white-space: normal; line-height: 1.4; }
+  .card-chevron { font-size: 14px; color: var(--gray-text); transition: transform 0.2s; flex-shrink: 0; margin-top: 2px; }
+  .card.open .card-chevron { transform: rotate(90deg); }
+  .card-body { display: none; padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--gray-border); font-size: 13.5px; color: #444; line-height: 1.65; }
+  .card.open .card-body { display: block; }
+
+  /* CHECKLIST */
+  .checklist-box { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius-lg); padding: 1.5rem; margin-top: 1.5rem; }
+  .checklist-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .checklist-title { font-size: 15px; font-weight: 600; }
+  .checklist-progress { font-size: 13px; color: var(--gray-text); font-weight: 500; }
+  .checklist-progress.done { color: var(--green-mid); font-weight: 600; }
+  .checklist-items { display: flex; flex-direction: column; gap: 8px; }
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; user-select: none; }
+  .check-item:hover { background: var(--gray-bg); }
+  .check-item.checked { background: var(--green-light); }
+  .check-box { width: 18px; height: 18px; border: 1.5px solid var(--gray-border); border-radius: 4px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--white); transition: background 0.15s, border-color 0.15s; }
+  .check-item.checked .check-box { background: var(--green-mid); border-color: var(--green-mid); }
+  .check-item.checked .check-box::after { content: '✓'; }
+  .check-label { font-size: 13.5px; line-height: 1.5; }
+  .check-item.checked .check-label { color: var(--green); }
+
+  /* BUTTONS */
+  .btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 0.65rem 1.5rem; background: var(--blue); color: var(--white); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s; }
+  .btn-primary:hover:not(:disabled) { background: var(--blue-dark); }
+  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+  .btn-primary:disabled { background: #C5C3BB; color: #8A8880; cursor: not-allowed; }
+  .btn-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 0.65rem 1.5rem; background: var(--white); color: var(--text); border: 1px solid var(--gray-border); border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-secondary:hover { background: var(--gray-bg); }
+  .btn-retry { display: inline-flex; align-items: center; gap: 5px; padding: 0.4rem 1rem; background: var(--amber-light); color: var(--amber); border: 1px solid #FAC775; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+  .btn-retry:hover { background: #FAC775; }
+  .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 10px; }
+
+  /* QUIZ */
+  .quiz-box { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+  .quiz-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-text); margin-bottom: 0.75rem; }
+  .quiz-question { font-size: 15px; font-weight: 600; margin-bottom: 1rem; line-height: 1.5; }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1.5px solid var(--gray-border); border-radius: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s; font-size: 14px; line-height: 1.5; width: 100%; text-align: left; background: var(--white); color: var(--text); }
+  .quiz-option:hover:not(.disabled):not(.correct):not(.wrong) { border-color: var(--blue-mid); background: var(--blue-light); }
+  .quiz-option.correct { border-color: var(--green-mid); background: var(--green-light); color: var(--green); pointer-events: none; }
+  .quiz-option.wrong { border-color: #E24B4A; background: var(--red-light); color: var(--red); pointer-events: none; }
+  .quiz-option.disabled { pointer-events: none; opacity: 0.5; }
+  .option-letter { font-weight: 700; font-size: 13px; min-width: 20px; flex-shrink: 0; margin-top: 1px; }
+  .quiz-feedback { margin-top: 0.75rem; padding: 10px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 500; display: none; line-height: 1.5; }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: var(--green-light); color: var(--green); }
+  .quiz-feedback.fail { background: var(--red-light); color: var(--red); }
+
+  /* FORMULA */
+  .formula-card { background: #1e1e2e; border-radius: var(--radius); padding: 1.25rem; margin: 1rem 0; overflow-x: auto; }
+  .formula-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #7B93B8; margin-bottom: 8px; }
+  .formula-code { font-family: 'Consolas','Courier New',monospace; font-size: 13px; color: #CDD6F4; white-space: pre; line-height: 1.7; }
+  .formula-code .fn { color: #89B4FA; }
+  .formula-code .cm { color: #6C7086; font-style: italic; }
+  .formula-code .st { color: #A6E3A1; }
+
+  /* UNDERSTAND CHECKLIST */
+  .understand-section { margin: 1.25rem 0 0; }
+  .understand-title { font-size: 12px; font-weight: 600; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
+  .u-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 8px; cursor: pointer; transition: background 0.15s; user-select: none; border: 1px solid var(--gray-border); margin-bottom: 6px; background: var(--white); }
+  .u-item:hover { background: var(--gray-bg); }
+  .u-item.checked { background: var(--green-light); border-color: #C0DD97; }
+  .u-box { width: 18px; height: 18px; border: 1.5px solid var(--gray-border); border-radius: 4px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--white); transition: background 0.15s, border-color 0.15s; }
+  .u-item.checked .u-box { background: var(--green-mid); border-color: var(--green-mid); }
+  .u-item.checked .u-box::after { content: '✓'; }
+  .u-label { font-size: 13.5px; line-height: 1.55; }
+  .u-item.checked .u-label { color: var(--green); }
+  .u-label code { font-family: monospace; background: rgba(0,0,0,0.07); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  .u-item.checked .u-label code { background: rgba(59,109,17,0.12); }
+
+  /* L CARDS */
+  .l-list { display: flex; flex-direction: column; gap: 1rem; }
+  .l-card { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius-lg); overflow: hidden; }
+  .l-card-header { padding: 1rem 1.25rem; cursor: pointer; display: flex; align-items: center; gap: 12px; user-select: none; }
+  .l-card-header:hover { background: var(--gray-bg); }
+  .l-badge { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; background: var(--blue-light); color: var(--blue-dark); }
+  .l-badge.locked { background: var(--gray-bg); color: #B4B2A9; }
+  .l-badge.done { background: var(--green-light); color: var(--green); }
+  .l-card-title { flex: 1; }
+  .l-card-name { font-size: 14px; font-weight: 600; }
+  .l-card-desc { font-size: 12px; color: var(--gray-text); margin-top: 2px; }
+  .l-card-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; flex-shrink: 0; }
+  .l-card-status.done { background: var(--green-light); color: var(--green); }
+  .l-card-status.locked { background: var(--gray-bg); color: var(--gray-text); }
+  .l-card-status.active { background: var(--blue-light); color: var(--blue-dark); }
+  .l-card-body { display: none; padding: 0 1.25rem 1.5rem; border-top: 1px solid var(--gray-border); }
+  .l-card.open .l-card-body { display: block; }
+  .l-card.locked .l-card-header { cursor: not-allowed; }
+  .l-card.locked .l-card-header:hover { background: transparent; }
+
+  /* SIMULATOR */
+  .simulator-box { background: var(--white); border: 1px solid var(--gray-border); border-radius: var(--radius-lg); margin: 1rem 0; overflow: hidden; }
+  .simulator-tabs { display: flex; border-bottom: 1px solid var(--gray-border); flex-wrap: wrap; }
+  .sim-tab { padding: 10px 16px; font-size: 13px; font-weight: 500; border: none; background: transparent; cursor: pointer; color: var(--gray-text); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; white-space: nowrap; }
+  .sim-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .sim-tab:hover:not(.active) { color: var(--text); }
+  .sim-panel { padding: 1.25rem; display: none; }
+  .sim-panel.active { display: block; }
+  .sim-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+  .sim-field { display: flex; flex-direction: column; gap: 4px; }
+  .sim-field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-text); }
+  .sim-field-val { font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 6px; background: var(--gray-bg); }
+  .sim-result { padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+  .sim-result.gagal { background: var(--red-light); color: var(--red); }
+  .sim-result.ok { background: var(--green-light); color: var(--green); }
+
+  /* FASE 4 */
+  .alur-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .alur-card { background: var(--white); border: 2px solid var(--gray-border); border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; transition: border-color 0.2s; text-align: left; }
+  .alur-card:hover { border-color: var(--blue-mid); }
+  .alur-card.selected { border-color: var(--blue); background: var(--blue-light); }
+  .alur-title { font-size: 16px; font-weight: 700; margin-bottom: 0.5rem; }
+  .alur-subtitle { font-size: 13px; color: var(--gray-text); }
+  .alur-card.selected .alur-subtitle { color: var(--blue-dark); }
+  .alur-steps { display: none; }
+  .alur-steps.visible { display: block; }
+  .step-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--gray-border); background: var(--white); margin-bottom: 8px; cursor: pointer; transition: background 0.15s; user-select: none; }
+  .step-item:hover { background: var(--gray-bg); }
+  .step-item.done { background: var(--green-light); border-color: #C0DD97; }
+  .step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--blue-light); color: var(--blue-dark); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-item.done .step-num { background: var(--green-mid); color: var(--white); }
+  .step-text { font-size: 13.5px; line-height: 1.5; padding-top: 2px; }
+  .step-item.done .step-text { color: var(--green); }
+  .done-panel { display: none; background: var(--green-light); border: 1px solid #C0DD97; border-radius: var(--radius-lg); padding: 2rem; text-align: center; margin-top: 1.5rem; }
+  .done-panel.visible { display: block; }
+  .done-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .done-title { font-size: 1.2rem; font-weight: 700; color: var(--green); margin-bottom: 0.5rem; }
+  .done-desc { font-size: 14px; color: #3B6D11; }
+
+  /* INFO BOXES */
+  .info-box { display: flex; gap: 10px; padding: 12px 14px; border-radius: 8px; font-size: 13.5px; margin: 0.75rem 0; line-height: 1.55; }
+  .info-box.blue { background: var(--blue-light); color: var(--blue-dark); }
+  .info-box.amber { background: var(--amber-light); color: var(--amber); }
+  .info-box.green { background: var(--green-light); color: var(--green); }
+  .info-icon { flex-shrink: 0; font-size: 15px; margin-top: 1px; }
+
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 9px 12px; border: 1px solid var(--gray-border); text-align: left; vertical-align: top; }
+  th { background: var(--gray-bg); font-weight: 600; font-size: 13px; }
+
+  .filter-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.75rem 0; }
+  .chip { padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 500; background: var(--red-light); color: var(--red); border: 1px solid #F7C1C1; }
+
+  .progress-bar-bg { height: 6px; background: var(--gray-border); border-radius: 3px; margin: 0.5rem 0 1.25rem; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--blue); border-radius: 3px; transition: width 0.3s; }
+
+  @media (max-width: 600px) {
+    .page-wrapper { padding: 1rem 1rem 3rem; }
+    .header-inner { padding: 0 1rem; }
+    .hero { padding: 2rem 0 1.5rem; }
+    .phase-btn { min-width: 90px; font-size: 12px; padding: 0.6rem 0.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="header-title">Monitoring MK Gagal</span>
+    <span class="header-divider">—</span>
+    <span class="header-sub">Panduan Tim</span>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <div class="hero">
+    <h1>Monitoring Mata Kuliah Gagal</h1>
+    <p>Dari penarikan data sampai pesan reminder — panduan lengkap, langkah per langkah, formula disertakan.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">4</span><span class="stat-label">Fase proses</span></div>
+      <div class="stat"><span class="stat-num">6</span><span class="stat-label">Sumber data</span></div>
+      <div class="stat"><span class="stat-num">7</span><span class="stat-label">Kolom lookup</span></div>
+      <div class="stat"><span class="stat-num" style="font-size:1rem;">Excel / Spreadsheet</span><span class="stat-label">Tools</span></div>
+    </div>
+  </div>
+
+  <nav class="phase-nav">
+    <button class="phase-btn active" onclick="showPhase(1,this)">1 — Tarik Data</button>
+    <button class="phase-btn" id="btn-fase2" onclick="showPhase(2,this)" disabled>2 — Siapkan &amp; Filter</button>
+    <button class="phase-btn" id="btn-fase3" onclick="showPhase(3,this)" disabled>3 — Kolom Lookup</button>
+    <button class="phase-btn" id="btn-fase4" onclick="showPhase(4,this)" disabled>4 — Output &amp; Tindak Lanjut</button>
+  </nav>
+
+  <!-- ===== FASE 1 ===== -->
+  <section class="section active" id="fase1">
+    <div class="section-header">
+      <div class="section-label">01 — Fase Pertama</div>
+      <h2>Penarikan Data</h2>
+      <p>Tarik semua sumber data ini melalui Schedule Query. Klik kartu untuk melihat detail setiap sumber.</p>
+    </div>
+    <div class="card-grid">
+      <div class="card" id="c1">
+        <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="card-badge badge-data">Data Utama</span>
+          <div class="card-title-group">
+            <div class="card-title">N_STDGRD_FAILED_CRSE</div>
+            <div class="card-subtitle">Seluruh riwayat MK gagal di Grade History. Titik awal seluruh proses.</div>
+          </div>
+          <span class="card-chevron">›</span>
+        </div>
+        <div class="card-body">Berisi semua catatan nilai gagal mahasiswa. Dari sinilah kita mengetahui siapa yang punya MK belum tuntas. Pastikan tarik data terbaru setiap periode.</div>
+      </div>
+      <div class="card" id="c2">
+        <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="card-badge badge-lookup">Lookup</span>
+          <div class="card-title-group">
+            <div class="card-title">N_PS_STDNT_ENROLL_STATUS_LITE</div>
+            <div class="card-subtitle">Tarik untuk periode berjalan (status E).</div>
+          </div>
+          <span class="card-chevron">›</span>
+        </div>
+        <div class="card-body">Dipakai untuk mengecek apakah mahasiswa sudah re-registrasi MK yang gagal di periode berjalan.</div>
+      </div>
+      <div class="card" id="c3">
+        <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="card-badge badge-lookup">Lookup</span>
+          <div class="card-title-group">
+            <div class="card-title">N_MASTER_MAHASISWA</div>
+            <div class="card-subtitle">Data SKS, email, nomor HP, dan status keaktifan mahasiswa.</div>
+          </div>
+          <span class="card-chevron">›</span>
+        </div>
+        <div class="card-body">Sumber info kontak. Kita butuh email dan nomor HP untuk mengirim reminder ke mahasiswa yang bersangkutan.</div>
+      </div>
+      <div class="card" id="c4">
+        <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="card-badge badge-lookup">Lookup</span>
+          <div class="card-title-group">
+            <div class="card-title">N_COURSE_EQUIVALENCIES</div>
+            <div class="card-subtitle">Penyetaraan mata kuliah — mendapatkan ARC Group dari kode MK.</div>
+          </div>
+          <span class="card-chevron">›</span>
+        </div>
+        <div class="card-body">Beberapa MK memiliki kode yang berbeda tapi setara. Data ini membantu kita mengetahui padanannya sehingga tidak salah identifikasi.</div>
+      </div>
+      <div class="card" id="c5">
+        <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="card-badge badge-lookup">Lookup</span>
+          <div class="card-title-group">
+            <div class="card-title">N_STDNT_GRAD_MONITORING</div>
+            <div class="card-subtitle">Status kelayakan yudisium mahasiswa.</div>
+          </div>
+          <span class="card-chevron">›</span>
+        </div>
+        <div class="card-body">Penting untuk mendeteksi mahasiswa yang sudah <strong>Eligible to Graduate</strong> tapi masih punya MK gagal — ini prioritas tinggi!</div>
+      </div>
+      <div class="card" id="c6">
+        <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="card-badge badge-schedule">Jadwal</span>
+          <div class="card-title-group">
+            <div class="card-title">N_CLASS_SCHEDULE_MAS</div>
+            <div class="card-subtitle">Cek apakah MK dibuka kelasnya di periode berjalan.</div>
+          </div>
+          <span class="card-chevron">›</span>
+        </div>
+        <div class="card-body">Dipakai untuk menentukan apakah MK yang gagal sudah buka kelas di periode ini. Informasi ini penting untuk membuat reminder yang relevan.</div>
+      </div>
+    </div>
+
+    <div class="checklist-box">
+      <div class="checklist-header">
+        <div class="checklist-title">✅ Checklist — Sudah tarik semua data? (Fase 1)</div>
+        <div class="checklist-progress" id="cl1-progress">0 / 5 selesai</div>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="cl1-bar" style="width:0%"></div></div>
+      <div class="checklist-items" id="cl1-items">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-label"><strong>N_STDGRD_FAILED_CRSE</strong> — data utama MK gagal</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-label"><strong>N_PS_STDNT_ENROLL_STATUS_LITE</strong> — periode berjalan (status E)</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-label"><strong>N_MASTER_MAHASISWA</strong> — info kontak mahasiswa</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-label"><strong>N_COURSE_EQUIVALENCIES</strong> — penyetaraan MK</div></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><div class="check-label"><strong>N_CLASS_SCHEDULE_MAS</strong> — jadwal kelas aktif</div></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <div></div>
+      <button class="btn-primary" id="btn-next1" onclick="showPhase(2,document.getElementById('btn-fase2'))" disabled>Lanjut ke Fase 2 →</button>
+    </div>
+  </section>
+
+  <!-- ===== FASE 2 ===== -->
+  <section class="section" id="fase2">
+    <div class="section-header">
+      <div class="section-label">02 — Fase Kedua</div>
+      <h2>Siapkan Data Utama</h2>
+      <p>Kenali 2 kolom kunci dan buang data yang <strong>bukan tanggung jawab tim</strong>.</p>
+    </div>
+
+    <div class="card" id="f2c1" style="margin-bottom:1rem;">
+      <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="card-badge badge-data">Kolom Kunci</span>
+        <div class="card-title-group">
+          <div class="card-title">Pahami Kolom Last Taken Term dan Long Descr — Fondasi Segalanya</div>
+          <div class="card-subtitle">Dua kolom ini adalah tulang punggung seluruh logika.</div>
+        </div>
+        <span class="card-chevron">›</span>
+      </div>
+      <div class="card-body">
+        <div class="tbl-wrap" style="margin-top:0.5rem;">
+          <table>
+            <thead><tr><th>Kolom</th><th>Nama Kolom</th><th>Fungsinya</th></tr></thead>
+            <tbody>
+              <tr><td><strong>AB</strong></td><td>Last Taken Term</td><td>Periode terakhir mahasiswa mengambil MK ini. Dipakai untuk cek apakah sudah re-registrasi di periode berjalan.</td></tr>
+              <tr><td><strong>AF</strong></td><td>Long Descr</td><td>Kategori MK (Thesis, Enrichment, Elective, dll). Kunci untuk memfilter populasi yang relevan.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="quiz-box">
+      <div class="quiz-label">🧠 Cek Pemahaman — Soal 1</div>
+      <div class="quiz-question">Kolom <strong>Long Descr</strong> digunakan untuk apa?</div>
+      <div class="quiz-options" id="qopts-f2q1"></div>
+      <div class="quiz-feedback" id="qfb-f2q1"></div>
+    </div>
+
+    <div class="card" id="f2c2" style="margin-bottom:1rem;">
+      <div class="card-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="card-badge" style="background:#FCEBEB;color:#A32D2D;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:3px 7px;border-radius:4px;flex-shrink:0;margin-top:3px;">🚫 Filter</span>
+        <div class="card-title-group">
+          <div class="card-title">Keluarkan Kategori yang Bukan Tanggung Jawab Tim</div>
+          <div class="card-subtitle">Filter dan hapus sebelum mengolah apapun.</div>
+        </div>
+        <span class="card-chevron">›</span>
+      </div>
+      <div class="card-body">
+        <p style="margin-bottom:0.75rem;font-size:13.5px;">Data mencakup <em>semua</em> MK gagal — termasuk yang bukan ranah tim. Keluarkan kategori berikut <strong>sebelum mengolah apapun</strong>:</p>
+        <div class="filter-chips"><span class="chip">Thesis</span><span class="chip">Enrichment</span><span class="chip">Elective (EC)</span><span class="chip">Free Elective (FE)</span></div>
+        <div class="info-box blue"><span class="info-icon">💡</span><span><strong>Kenapa dikecualikan?</strong> EC/FE kemungkinan sudah digantikan MK lain. Enrichment bukan ranah PIC permohonan. Thesis punya alur sendiri.</span></div>
+      </div>
+    </div>
+
+    <div class="quiz-box">
+      <div class="quiz-label">🎯 Latihan Filter — Soal 2</div>
+      <div class="quiz-question">Manakah MK di bawah ini yang <strong>HARUS difilter/dibuang</strong>?</div>
+      <div class="quiz-options" id="qopts-f2q2"></div>
+      <div class="quiz-feedback" id="qfb-f2q2"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="showPhase(1,document.querySelector('.phase-btn'))">← Kembali</button>
+      <button class="btn-primary" id="btn-next2" onclick="showPhase(3,document.getElementById('btn-fase3'))" disabled>Lanjut ke Fase 3 →</button>
+    </div>
+  </section>
+
+  <!-- ===== FASE 3 ===== -->
+  <section class="section" id="fase3">
+    <div class="section-header">
+      <div class="section-label">03 — Fase Ketiga</div>
+      <h2>Tambahkan Kolom Lookup (L1–L7)</h2>
+      <p>Buat 7 kolom tambahan secara berurutan. Centang tiap poin pemahaman, lalu jawab kuis untuk membuka kolom berikutnya.</p>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <span style="font-size:13px;color:var(--gray-text);" id="l3-lbl">0 / 7 kolom selesai</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="l3-bar" style="width:0%"></div></div>
+
+    <div class="l-list">
+
+      <!-- L1 -->
+      <div class="l-card open" id="lc1">
+        <div class="l-card-header" onclick="tryLCard('lc1')">
+          <div class="l-badge" id="lb1">L1</div>
+          <div class="l-card-title"><div class="l-card-name">XLOOKUP — ARC Group (Penyetaraan MK)</div><div class="l-card-desc">Dapatkan padanan kode MK dari N_COURSE_EQUIVALENCIES</div></div>
+          <span class="l-card-status active" id="ls1">Aktif</span>
+        </div>
+        <div class="l-card-body">
+          <div class="formula-card">
+            <div class="formula-label">Formula L1 — XLOOKUP</div>
+            <div class="formula-code">= <span class="fn">XLOOKUP</span>(
+  [Kode MK yang dicari],               <span class="cm">← nilai yang ingin dicocokkan</span>
+  [Kolom kode di N_COURSE_EQUIV],      <span class="cm">← sumber pencarian</span>
+  [Kolom ARC Group di N_COURSE_EQUIV], <span class="cm">← hasil yang ditampilkan</span>
+  <span class="st">"-"</span>                                <span class="cm">← jika tidak ditemukan</span>
+)</div>
+          </div>
+          <div class="understand-section">
+            <div class="understand-title">✅ Centang tiap bagian yang sudah kamu mengerti:</div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Argumen 1 — Nilai yang dicari:</strong> Klik sel di kolom Kode MK data utama. Ini yang akan dicocokkan ke sumber pencarian.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Argumen 2 — Sumber pencarian:</strong> Blok seluruh kolom kode MK di sheet N_COURSE_EQUIVALENCIES sebagai area pencarian.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Argumen 3 — Kolom hasil:</strong> Blok kolom ARC Group di sheet yang sama — nilai dari kolom ini yang akan muncul jika cocok ditemukan.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Argumen 4 — Fallback <code>"-"</code>:</strong> Jika kode MK tidak ditemukan, tampilkan tanda hubung, bukan error <code>#N/A</code>. Ini keunggulan XLOOKUP dibanding VLOOKUP.</div></div>
+          </div>
+          <div class="quiz-box" style="background:var(--gray-bg);margin-top:1rem;">
+            <div class="quiz-label">Kuis L1</div>
+            <div class="quiz-question">Apa keunggulan utama XLOOKUP dibanding VLOOKUP?</div>
+            <div class="quiz-options" id="qopts-l1"></div>
+            <div class="quiz-feedback" id="qfb-l1"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- L2 -->
+      <div class="l-card locked" id="lc2">
+        <div class="l-card-header" onclick="tryLCard('lc2')">
+          <div class="l-badge locked" id="lb2">L2</div>
+          <div class="l-card-title"><div class="l-card-name">IFERROR + INDEX + MATCH — Enrollment Periode Ini</div><div class="l-card-desc">Cek apakah mahasiswa sudah daftar MK di periode berjalan</div></div>
+          <span class="l-card-status locked" id="ls2">🔒 Terkunci</span>
+        </div>
+        <div class="l-card-body">
+          <div class="formula-card">
+            <div class="formula-label">Formula L2 — IFERROR + INDEX + MATCH</div>
+            <div class="formula-code">= <span class="fn">IFERROR</span>(
+  <span class="fn">INDEX</span>(
+    [Kolom hasil di sheet Enrollment],
+    <span class="fn">MATCH</span>(
+      [NIM] & [Kode MK],         <span class="cm">← gabungkan 2 kriteria dengan &</span>
+      [Kolom NIM] & [Kolom MK],  <span class="cm">← sumber data juga digabung</span>
+      0                          <span class="cm">← 0 = cari yang PERSIS SAMA</span>
+    )
+  ),
+  <span class="st">"-"</span>
+)</div>
+          </div>
+          <div class="understand-section">
+            <div class="understand-title">✅ Centang tiap bagian yang sudah kamu mengerti:</div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>IFERROR — Pelindung error:</strong> Membungkus seluruh formula. Jika hasilnya error karena data tidak ditemukan, tampilkan <code>"-"</code> bukan pesan error merah.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>INDEX — Pengambil nilai:</strong> Menerima nomor baris dari MATCH, lalu mengambil nilai dari baris tersebut di kolom hasil yang sudah ditentukan.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>MATCH dengan angka 0 (exact match):</strong> Mencari posisi baris. Angka 0 = harus sama persis. Hasilnya berupa nomor baris yang dikirim ke INDEX.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Gabungkan 2 kriteria dengan <code>&</code>:</strong> Karena kita perlu mencocokkan NIM dan Kode MK sekaligus, gunakan <code>A2&amp;B2</code> sebagai kunci pencarian dan kolom sumber juga digabung.</div></div>
+          </div>
+          <div class="quiz-box" style="background:var(--gray-bg);margin-top:1rem;">
+            <div class="quiz-label">Kuis L2</div>
+            <div class="quiz-question">Mengapa kita menggabungkan NIM dan Kode MK dengan <code>&</code> dalam MATCH?</div>
+            <div class="quiz-options" id="qopts-l2"></div>
+            <div class="quiz-feedback" id="qfb-l2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- L3 -->
+      <div class="l-card locked" id="lc3">
+        <div class="l-card-header" onclick="tryLCard('lc3')">
+          <div class="l-badge locked" id="lb3">L3</div>
+          <div class="l-card-title"><div class="l-card-name">IF + OR — Status MK (Sudah Registrasi / Gagal?)</div><div class="l-card-desc">Kolom terpenting — menentukan status mahasiswa per MK</div></div>
+          <span class="l-card-status locked" id="ls3">🔒 Terkunci</span>
+        </div>
+        <div class="l-card-body">
+          <div class="formula-card">
+            <div class="formula-label">Formula L3 — IF + OR</div>
+            <div class="formula-code">= <span class="fn">IF</span>(
+  <span class="fn">OR</span>(
+    [Last Taken Term] = [Periode Berjalan], <span class="cm">← kondisi 1</span>
+    [Kolom Enrollment] &lt;&gt; <span class="st">"-"</span>            <span class="cm">← kondisi 2</span>
+  ),
+  <span class="st">"Sudah Registrasi"</span>,  <span class="cm">← salah satu benar → ini</span>
+  <span class="st">"Gagal"</span>              <span class="cm">← semua salah → ini</span>
+)</div>
+          </div>
+          <div class="simulator-box">
+            <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--gray-border);font-size:13px;font-weight:600;">🎮 Simulator Logika L3</div>
+            <div class="simulator-tabs">
+              <button class="sim-tab active" onclick="switchSim(this,'sim1')">Skenario 1</button>
+              <button class="sim-tab" onclick="switchSim(this,'sim2')">Skenario 2</button>
+              <button class="sim-tab" onclick="switchSim(this,'sim3')">Skenario 3</button>
+            </div>
+            <div class="sim-panel active" id="sim1">
+              <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem;color:var(--gray-text);">Sudah daftar lagi di periode ini</div>
+              <div class="sim-row"><div class="sim-field"><div class="sim-field-label">Last Taken Term</div><div class="sim-field-val">2024-1 ✅</div></div><div class="sim-field"><div class="sim-field-label">Periode Berjalan</div><div class="sim-field-val">2024-1</div></div><div class="sim-field"><div class="sim-field-label">Enrollment</div><div class="sim-field-val">-</div></div></div>
+              <div style="font-size:12px;color:var(--gray-text);margin-bottom:0.5rem;">Kondisi 1 BENAR (AB = Periode) → OR = TRUE</div>
+              <div class="sim-result ok">✅ "Sudah Registrasi" — tidak perlu di-follow up</div>
+            </div>
+            <div class="sim-panel" id="sim2">
+              <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem;color:var(--gray-text);">Belum daftar sama sekali</div>
+              <div class="sim-row"><div class="sim-field"><div class="sim-field-label">Last Taken Term</div><div class="sim-field-val">2023-2</div></div><div class="sim-field"><div class="sim-field-label">Periode Berjalan</div><div class="sim-field-val">2024-1</div></div><div class="sim-field"><div class="sim-field-label">Enrollment</div><div class="sim-field-val">-</div></div></div>
+              <div style="font-size:12px;color:var(--gray-text);margin-bottom:0.5rem;">Kondisi 1 SALAH, Kondisi 2 SALAH → OR = FALSE</div>
+              <div class="sim-result gagal">❌ "Gagal" — masuk daftar reminder!</div>
+            </div>
+            <div class="sim-panel" id="sim3">
+              <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem;color:var(--gray-text);">Ada di data enrollment</div>
+              <div class="sim-row"><div class="sim-field"><div class="sim-field-label">Last Taken Term</div><div class="sim-field-val">2023-2</div></div><div class="sim-field"><div class="sim-field-label">Periode Berjalan</div><div class="sim-field-val">2024-1</div></div><div class="sim-field"><div class="sim-field-label">Enrollment</div><div class="sim-field-val">E ✅</div></div></div>
+              <div style="font-size:12px;color:var(--gray-text);margin-bottom:0.5rem;">Kondisi 2 BENAR (Enrollment ≠ "-") → OR = TRUE</div>
+              <div class="sim-result ok">✅ "Sudah Registrasi" — sudah terdaftar di enrollment</div>
+            </div>
+          </div>
+          <div class="understand-section">
+            <div class="understand-title">✅ Centang tiap bagian yang sudah kamu mengerti:</div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Fungsi OR ( ):</strong> Mengembalikan TRUE jika <em>minimal satu</em> kondisi terpenuhi — tidak harus keduanya. Satu kondisi benar sudah cukup.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Kondisi 1 — Last Taken Term = Periode Berjalan:</strong> Jika sama, artinya mahasiswa sudah mengambil ulang MK ini di periode berjalan.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Kondisi 2 — Enrollment ≠ <code>"-"</code>:</strong> Jika ada nilai di kolom enrollment (bukan tanda hubung), mahasiswa sudah terdaftar di sistem enrollment.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Hasil IF:</strong> Jika OR = TRUE → "Sudah Registrasi" (tidak perlu FU). Jika OR = FALSE → "Gagal" (masuk daftar reminder).</div></div>
+          </div>
+          <div class="quiz-box" style="background:var(--gray-bg);margin-top:1rem;">
+            <div class="quiz-label">Kuis L3</div>
+            <div class="quiz-question">Last Taken Term = 2023-2, Periode Berjalan = 2024-1, Enrollment = "-". Apa hasilnya?</div>
+            <div class="quiz-options" id="qopts-l3"></div>
+            <div class="quiz-feedback" id="qfb-l3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- L4 -->
+      <div class="l-card locked" id="lc4">
+        <div class="l-card-header" onclick="tryLCard('lc4')">
+          <div class="l-badge locked" id="lb4">L4</div>
+          <div class="l-card-title"><div class="l-card-name">XLOOKUP — Status Yudisium Mahasiswa</div><div class="l-card-desc">Deteksi mahasiswa Eligible to Graduate yang masih punya MK gagal</div></div>
+          <span class="l-card-status locked" id="ls4">🔒 Terkunci</span>
+        </div>
+        <div class="l-card-body">
+          <div class="formula-card">
+            <div class="formula-label">Formula L4 — XLOOKUP</div>
+            <div class="formula-code">= <span class="fn">XLOOKUP</span>(
+  [NIM Mahasiswa],
+  [Kolom NIM di N_STDNT_GRAD_MONITORING],
+  [Kolom Status Kelayakan Yudisium],
+  <span class="st">"-"</span>
+)</div>
+          </div>
+          <div class="info-box green"><span class="info-icon">🎓</span><span><strong>Prioritas utama!</strong> Eligible to Graduate + MK Gagal = mahasiswa sudah layak wisuda tapi tertahan. Segera tindak lanjuti!</span></div>
+          <div class="understand-section">
+            <div class="understand-title">✅ Centang tiap bagian yang sudah kamu mengerti:</div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Kunci pencarian — NIM:</strong> Gunakan NIM mahasiswa sebagai identifier unik untuk lookup ke tabel monitoring yudisium.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Sumber — N_STDNT_GRAD_MONITORING:</strong> Tabel ini menyimpan status kelayakan yudisium setiap mahasiswa dari sistem akademik.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Hasil — Status Kelayakan Yudisium:</strong> Jika hasilnya "Eligible to Graduate", mahasiswa ini masuk kategori prioritas tinggi untuk segera di-follow up.</div></div>
+          </div>
+          <div class="quiz-box" style="background:var(--gray-bg);margin-top:1rem;">
+            <div class="quiz-label">Kuis L4</div>
+            <div class="quiz-question">Kenapa mahasiswa "Eligible to Graduate" dengan MK gagal menjadi prioritas utama?</div>
+            <div class="quiz-options" id="qopts-l4"></div>
+            <div class="quiz-feedback" id="qfb-l4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- L5 -->
+      <div class="l-card locked" id="lc5">
+        <div class="l-card-header" onclick="tryLCard('lc5')">
+          <div class="l-badge locked" id="lb5">L5</div>
+          <div class="l-card-title"><div class="l-card-name">IFERROR + IF + XLOOKUP — Ketersediaan Kelas</div><div class="l-card-desc">Cek apakah MK yang gagal dibuka kelasnya periode ini</div></div>
+          <span class="l-card-status locked" id="ls5">🔒 Terkunci</span>
+        </div>
+        <div class="l-card-body">
+          <div class="formula-card">
+            <div class="formula-label">Formula L5 — Cek ketersediaan kelas</div>
+            <div class="formula-code">= <span class="fn">IFERROR</span>(
+  <span class="fn">IF</span>(
+    <span class="fn">XLOOKUP</span>([Kode MK],
+             [Kode di N_CLASS_SCHEDULE_MAS],
+             [Kode di N_CLASS_SCHEDULE_MAS],
+             <span class="st">"-"</span>) &lt;&gt; <span class="st">"-"</span>,
+    <span class="st">"Dibuka Kelas"</span>,
+    <span class="st">"-"</span>
+  ),
+  <span class="st">"-"</span>
+)</div>
+          </div>
+          <div class="understand-section">
+            <div class="understand-title">✅ Centang tiap bagian yang sudah kamu mengerti:</div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>XLOOKUP di dalam IF:</strong> Mencari kode MK di jadwal kelas. Jika ditemukan, hasilnya adalah kode itu sendiri (bukan <code>"-"</code>).</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Kondisi IF — hasil ≠ <code>"-"</code>:</strong> Jika XLOOKUP menemukan MK di jadwal (hasilnya bukan tanda hubung), berarti kelas dibuka → tampilkan "Dibuka Kelas".</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>IFERROR terluar:</strong> Menangkap error apapun yang mungkin muncul dari seluruh formula, dan menampilkan <code>"-"</code> sebagai nilai aman.</div></div>
+          </div>
+          <div class="quiz-box" style="background:var(--gray-bg);margin-top:1rem;">
+            <div class="quiz-label">Kuis L5</div>
+            <div class="quiz-question">Apa yang ditampilkan formula L5 jika kode MK ditemukan di jadwal N_CLASS_SCHEDULE_MAS?</div>
+            <div class="quiz-options" id="qopts-l5"></div>
+            <div class="quiz-feedback" id="qfb-l5"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- L6 -->
+      <div class="l-card locked" id="lc6">
+        <div class="l-card-header" onclick="tryLCard('lc6')">
+          <div class="l-badge locked" id="lb6">L6</div>
+          <div class="l-card-title"><div class="l-card-name">TEXTJOIN + UNIQUE + FILTER — Gabungkan List MK Dibuka</div><div class="l-card-desc">Satukan semua MK yang kelas dibuka dalam satu sel per mahasiswa</div></div>
+          <span class="l-card-status locked" id="ls6">🔒 Terkunci</span>
+        </div>
+        <div class="l-card-body">
+          <div class="formula-card">
+            <div class="formula-label">Formula L6 — TEXTJOIN + UNIQUE + FILTER</div>
+            <div class="formula-code">= <span class="fn">TEXTJOIN</span>(
+  <span class="st">","</span> & <span class="fn">CHAR</span>(10),    <span class="cm">← pemisah: koma + ganti baris</span>
+  0,                     <span class="cm">← tampilkan meski ada yang kosong</span>
+  <span class="fn">UNIQUE</span>(
+    <span class="fn">FILTER</span>(
+      [Kolom Nama/Kode MK],
+      [Kolom Ketersediaan] = <span class="st">"Dibuka Kelas"</span>
+    )
+  )
+)</div>
+          </div>
+          <div class="understand-section">
+            <div class="understand-title">✅ Centang tiap bagian yang sudah kamu mengerti:</div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>FILTER — ambil MK yang relevan:</strong> Hanya mengambil baris dimana kolom Ketersediaan = "Dibuka Kelas". Baris lain diabaikan.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>UNIQUE — hilangkan duplikat:</strong> Jika satu MK muncul lebih dari sekali dari FILTER, UNIQUE memastikan hanya tampil satu kali saja di list akhir.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>TEXTJOIN + CHAR(10):</strong> Menggabungkan semua hasil UNIQUE menjadi satu teks dalam satu sel. <code>CHAR(10)</code> adalah karakter ganti baris (line break) agar tiap MK di baris terpisah.</div></div>
+          </div>
+          <div class="quiz-box" style="background:var(--gray-bg);margin-top:1rem;">
+            <div class="quiz-label">Kuis L6</div>
+            <div class="quiz-question">Fungsi CHAR(10) dalam formula TEXTJOIN digunakan untuk apa?</div>
+            <div class="quiz-options" id="qopts-l6"></div>
+            <div class="quiz-feedback" id="qfb-l6"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- L7 -->
+      <div class="l-card locked" id="lc7">
+        <div class="l-card-header" onclick="tryLCard('lc7')">
+          <div class="l-badge locked" id="lb7">L7</div>
+          <div class="l-card-title"><div class="l-card-name">XLOOKUP × 3 — Email, No HP &amp; Status Keaktifan</div><div class="l-card-desc">Ambil info kontak dari N_MASTER_MAHASISWA</div></div>
+          <span class="l-card-status locked" id="ls7">🔒 Terkunci</span>
+        </div>
+        <div class="l-card-body">
+          <div class="formula-card">
+            <div class="formula-label">Formula L7 — ulangi untuk setiap kolom kontak</div>
+            <div class="formula-code">= <span class="fn">XLOOKUP</span>(
+  [NIM Mahasiswa],
+  [Kolom NIM di N_MASTER_MAHASISWA],
+  [Kolom Email / No. HP / Status], <span class="cm">← ganti sesuai kolom</span>
+  <span class="st">"-"</span>
+)</div>
+          </div>
+          <div class="understand-section">
+            <div class="understand-title">✅ Centang tiap bagian yang sudah kamu mengerti:</div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Buat 3 kolom terpisah:</strong> Satu XLOOKUP per kolom — untuk Email, Nomor HP, dan Status Keaktifan. Tidak bisa digabung dalam satu formula.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>NIM sebagai kunci:</strong> Setiap XLOOKUP menggunakan NIM sebagai identifier pencarian ke N_MASTER_MAHASISWA.</div></div>
+            <div class="u-item" onclick="this.classList.toggle('checked')"><div class="u-box"></div><div class="u-label"><strong>Ubah argumen ke-3 saja:</strong> Cukup ganti kolom hasil untuk Email, No HP, atau Status Keaktifan. Argumen lainnya tetap sama.</div></div>
+          </div>
+          <div class="quiz-box" style="background:var(--gray-bg);margin-top:1rem;">
+            <div class="quiz-label">Kuis L7</div>
+            <div class="quiz-question">Berapa banyak formula XLOOKUP terpisah yang perlu dibuat untuk kolom L7?</div>
+            <div class="quiz-options" id="qopts-l7"></div>
+            <div class="quiz-feedback" id="qfb-l7"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /l-list -->
+    <div class="btn-row" style="margin-top:1.5rem;">
+      <button class="btn-secondary" onclick="showPhase(2,document.getElementById('btn-fase2'))">← Kembali</button>
+      <button class="btn-primary" id="btn-next3" onclick="showPhase(4,document.getElementById('btn-fase4'))" disabled>Lanjut ke Fase 4 →</button>
+    </div>
+  </section>
+
+  <!-- ===== FASE 4 ===== -->
+  <section class="section" id="fase4">
+    <div class="section-header">
+      <div class="section-label">04 — Fase Keempat</div>
+      <h2>Output &amp; Tindak Lanjut</h2>
+      <p>Data sudah siap! Pilih jalur output yang sesuai dan ikuti langkah-langkah per alur.</p>
+    </div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:0.75rem;">Pilih alur yang akan digunakan:</div>
+    <div class="alur-choice">
+      <div class="alur-card" id="alur-a-btn" onclick="selectAlur('A')">
+        <div class="alur-title">📊 Alur A — Pakai Pivot</div>
+        <div class="alur-subtitle">Buat Pivot Table untuk analisis dan summary data</div>
+      </div>
+      <div class="alur-card" id="alur-b-btn" onclick="selectAlur('B')">
+        <div class="alur-title">🔍 Alur B — Tanpa Pivot</div>
+        <div class="alur-subtitle">Filter manual dan buat reminder langsung dari data</div>
+      </div>
+    </div>
+    <div class="alur-steps" id="alur-a-steps">
+      <div style="font-size:14px;font-weight:600;margin-bottom:0.75rem;color:var(--blue);">📊 Langkah-langkah Alur A — Pakai Pivot</div>
+      <div class="step-item" onclick="toggleStep(this,'a')"><div class="step-num">1</div><div class="step-text">Buat kolom <strong>Status Tindak Lanjut</strong> dengan logika IF bertingkat berdasarkan Status Yudisium dan Status MK</div></div>
+      <div class="step-item" onclick="toggleStep(this,'a')"><div class="step-num">2</div><div class="step-text">Blok semua data → Insert <strong>Pivot Table</strong> di sheet baru</div></div>
+      <div class="step-item" onclick="toggleStep(this,'a')"><div class="step-num">3</div><div class="step-text">Taruh <strong>Student ID</strong> sebagai nilai dengan COUNT di area Values</div></div>
+      <div class="step-item" onclick="toggleStep(this,'a')"><div class="step-num">4</div><div class="step-text">Taruh <strong>Status Tindak Lanjut</strong> sebagai baris (Rows) pada Pivot</div></div>
+      <div class="step-item" onclick="toggleStep(this,'a')"><div class="step-num">5</div><div class="step-text">Klik 2x pada cell <strong>"FU Dibuka Kelas"</strong> → buat pesan reminder dari data yang muncul</div></div>
+      <div class="done-panel" id="done-a"><div class="done-icon">🎉</div><div class="done-title">Proses Alur A Selesai!</div><div class="done-desc">Data siap digunakan untuk reminder mahasiswa. Selalu bandingkan hasil dengan rekan tim sebelum mengirim pesan.</div></div>
+    </div>
+    <div class="alur-steps" id="alur-b-steps">
+      <div style="font-size:14px;font-weight:600;margin-bottom:0.75rem;color:var(--blue);">🔍 Langkah-langkah Alur B — Tanpa Pivot</div>
+      <div class="step-item" onclick="toggleStep(this,'b')"><div class="step-num">1</div><div class="step-text">Filter &amp; hapus baris dengan Status MK = <strong>Enrichment / Thesis / EC / FE</strong></div></div>
+      <div class="step-item" onclick="toggleStep(this,'b')"><div class="step-num">2</div><div class="step-text">Filter &amp; hapus baris dengan Status Yudisium = <strong>Eligible to Graduate</strong></div></div>
+      <div class="step-item" onclick="toggleStep(this,'b')"><div class="step-num">3</div><div class="step-text">Filter &amp; hapus baris dengan Enrollment <strong>tidak #N/A</strong> (sudah terdaftar)</div></div>
+      <div class="step-item" onclick="toggleStep(this,'b')"><div class="step-num">4</div><div class="step-text">Buat pesan reminder dari sisa data — bedakan MK <strong>Dibuka Kelas</strong> vs tidak dibuka</div></div>
+      <div class="step-item" onclick="toggleStep(this,'b')"><div class="step-num">5</div><div class="step-text">Validasi dengan rekan: bandingkan jumlah data. <strong>Sama</strong> = selesai! <strong>Beda</strong> = cek ulang langkah yang mungkin terlewat</div></div>
+      <div class="done-panel" id="done-b"><div class="done-icon">🎉</div><div class="done-title">Proses Alur B Selesai!</div><div class="done-desc">Data siap digunakan untuk reminder mahasiswa. Selalu bandingkan hasil dengan rekan tim sebelum mengirim pesan.</div></div>
+    </div>
+    <div style="margin-top:1.5rem;background:var(--white);border:1px solid var(--gray-border);border-radius:var(--radius-lg);padding:1.25rem;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:1rem;">🔀 Referensi: Logika Status Tindak Lanjut</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Kondisi</th><th>Status Tindak Lanjut</th></tr></thead>
+          <tbody>
+            <tr><td>Status Yudisium = Eligible to Graduate</td><td>⚡ Sudah Layak Yudisium</td></tr>
+            <tr><td>Status MK = Gagal DAN Ketersediaan = Dibuka Kelas</td><td>📢 FU Dibuka Kelas</td></tr>
+            <tr><td>Semua kondisi lainnya</td><td>📋 FU</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="showPhase(3,document.getElementById('btn-fase3'))">← Kembali</button>
+      <button class="btn-secondary" onclick="restartAll()">↺ Mulai dari Awal</button>
+    </div>
+  </section>
+</div>
+
+<script>
+// ===== QUIZ DATA =====
+const QD = {
+  'f2q1': {
+    opts: [
+      { t: 'Mengetahui kapan terakhir kali mahasiswa mengambil MK', c: false },
+      { t: 'Mengetahui kategori MK agar bisa difilter yang relevan', c: true },
+      { t: 'Mengetahui nama dosen pengampu mata kuliah', c: false }
+    ],
+    ok: '✅ Benar! Long Descr berisi kategori MK seperti Thesis, Enrichment, Elective, dll.',
+    fail: '❌ Belum tepat. Kolom Long Descr berisi kategori/jenis MK, bukan info waktu atau dosen.'
+  },
+  'f2q2': {
+    opts: [
+      { t: 'Matematika Diskrit (MK reguler)', c: false },
+      { t: 'Enrichment — Industrial Internship', c: true },
+      { t: 'Algoritma dan Pemrograman', c: false },
+      { t: 'Free Elective — Seni Pertunjukan', c: true }
+    ],
+    multi: true,
+    ok: '✅ Benar! Enrichment dan Free Elective (FE) dikecualikan dari monitoring ini.',
+    fail: '❌ Belum tepat. Yang harus dibuang adalah yang berkategori Enrichment dan Free Elective (FE).'
+  },
+  'l1': {
+    opts: [
+      { t: 'Lebih cepat karena menggunakan binary search otomatis', c: false },
+      { t: 'Ada nilai fallback bawaan dan tidak perlu hitung nomor kolom', c: true },
+      { t: 'Hanya bisa digunakan di Excel / Spreadsheet versi terbaru saja', c: false }
+    ],
+    ok: '✅ Benar! XLOOKUP punya fallback built-in dan lebih fleksibel dari VLOOKUP.',
+    fail: '❌ Belum tepat. Keunggulan utama XLOOKUP adalah fallback bawaan dan tidak perlu nomor kolom.'
+  },
+  'l2': {
+    opts: [
+      { t: 'Karena MATCH tidak bisa bekerja dengan data angka saja', c: false },
+      { t: 'Untuk mempercepat proses pencarian data besar', c: false },
+      { t: 'Karena kita perlu mencocokkan 2 kriteria sekaligus (NIM + Kode MK)', c: true }
+    ],
+    ok: '✅ Benar! Dengan & kita bisa mencari kombinasi NIM + Kode MK sekaligus.',
+    fail: '❌ Belum tepat. Penggabungan dengan & dilakukan agar MATCH bisa mencari 2 kriteria sekaligus.'
+  },
+  'l3': {
+    opts: [
+      { t: '"Gagal" — karena kedua kondisi OR bernilai FALSE', c: true },
+      { t: '"Sudah Registrasi" — karena ada di semester sebelumnya', c: false },
+      { t: '#N/A — data tidak ditemukan di sumber', c: false }
+    ],
+    ok: '✅ Benar! AB ≠ Periode Berjalan dan Enrollment = "-", jadi OR = FALSE → "Gagal".',
+    fail: '❌ Belum tepat. Karena kedua kondisi OR sama-sama salah, hasilnya adalah "Gagal".'
+  },
+  'l4': {
+    opts: [
+      { t: 'Karena mereka biasanya mahasiswa dengan prestasi akademik baik', c: false },
+      { t: 'Karena mereka sudah layak wisuda tapi tertahan MK yang belum tuntas', c: true },
+      { t: 'Karena datanya lebih mudah diproses di dalam sistem', c: false }
+    ],
+    ok: '✅ Benar! Mereka sudah memenuhi syarat wisuda tapi MK gagal jadi penghambat.',
+    fail: '❌ Belum tepat. Mereka diprioritaskan karena sudah eligible wisuda tapi ada MK yang belum tuntas.'
+  },
+  'l5': {
+    opts: [
+      { t: '"-" (tanda hubung karena tidak ditemukan)', c: false },
+      { t: '"Dibuka Kelas"', c: true },
+      { t: 'Nama lengkap MK yang ditemukan di jadwal', c: false }
+    ],
+    ok: '✅ Benar! Jika MK ditemukan di jadwal, IF menampilkan teks "Dibuka Kelas".',
+    fail: '❌ Belum tepat. Jika XLOOKUP menemukan MK, kondisi IF terpenuhi dan hasilnya adalah "Dibuka Kelas".'
+  },
+  'l6': {
+    opts: [
+      { t: 'Mengganti nilai kosong dengan karakter angka 10', c: false },
+      { t: 'Membatasi jumlah MK yang tampil maksimum 10 buah', c: false },
+      { t: 'Menambahkan karakter ganti baris (line break) antar MK dalam satu sel', c: true }
+    ],
+    ok: '✅ Benar! CHAR(10) adalah kode ASCII untuk ganti baris, agar tiap MK tampil di baris terpisah.',
+    fail: '❌ Belum tepat. CHAR(10) adalah karakter newline (ganti baris), bukan angka atau batas jumlah.'
+  },
+  'l7': {
+    opts: [
+      { t: '1 formula — semuanya bisa digabung dalam satu XLOOKUP', c: false },
+      { t: '3 formula — masing-masing untuk Email, No HP, dan Status Keaktifan', c: true },
+      { t: '7 formula — satu per baris data mahasiswa', c: false }
+    ],
+    ok: '✅ Benar! Kita perlu 3 XLOOKUP terpisah, satu untuk tiap kolom kontak.',
+    fail: '❌ Belum tepat. Setiap kolom kontak (Email, No HP, Status) memerlukan satu XLOOKUP tersendiri — 3 total.'
+  }
+};
+
+const state = { f2q1: false, f2q2: false, lDone: {} };
+
+function shuffle(a) {
+  const r = [...a];
+  for (let i = r.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+}
+
+function renderQ(key, optsId) {
+  const q = QD[key];
+  const cont = document.getElementById(optsId);
+  if (!cont || !q) return;
+  const shuffled = shuffle(q.opts);
+  const letters = ['A','B','C','D'];
+  cont.innerHTML = '';
+  shuffled.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option';
+    btn.dataset.correct = opt.c ? '1' : '0';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt.t}</span>`;
+    btn.addEventListener('click', () => handleAnswer(btn, key, optsId));
+    cont.appendChild(btn);
+  });
+}
+
+function getFeedbackEl(optsId) {
+  const cont = document.getElementById(optsId);
+  if (!cont) return null;
+  return cont.parentElement.querySelector('.quiz-feedback');
+}
+
+function handleAnswer(btn, key, optsId) {
+  const q = QD[key];
+  const cont = document.getElementById(optsId);
+  const fb = getFeedbackEl(optsId);
+  const allOpts = cont.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === '1';
+
+  allOpts.forEach(o => { if (o !== btn) o.classList.add('disabled'); });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    if (fb) { fb.textContent = q.ok; fb.className = 'quiz-feedback show ok'; }
+    onCorrect(key);
+  } else {
+    btn.classList.add('wrong');
+    if (fb) {
+      fb.className = 'quiz-feedback show fail';
+      fb.innerHTML = q.fail;
+      const rb = document.createElement('button');
+      rb.className = 'btn-retry';
+      rb.textContent = '↺ Coba Lagi';
+      rb.addEventListener('click', () => {
+        fb.className = 'quiz-feedback';
+        fb.innerHTML = '';
+        renderQ(key, optsId);
+      });
+      fb.appendChild(rb);
+    }
+  }
+}
+
+function onCorrect(key) {
+  if (key === 'f2q1') { state.f2q1 = true; checkF2(); }
+  else if (key === 'f2q2') { state.f2q2 = true; checkF2(); }
+  else {
+    const n = parseInt(key.replace('l',''));
+    markDone('lc' + n);
+    if (n < 7) setTimeout(() => unlockL('lc' + (n + 1)), 400);
+  }
+}
+
+function checkF2() {
+  if (state.f2q1 && state.f2q2) {
+    document.getElementById('btn-next2').disabled = false;
+    document.getElementById('btn-fase3').disabled = false;
+  }
+}
+
+function showPhase(n, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('fase' + n).classList.add('active');
+  if (btn) btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  const total = document.querySelectorAll('#cl1-items .check-item').length;
+  const done = document.querySelectorAll('#cl1-items .check-item.checked').length;
+  const prog = document.getElementById('cl1-progress');
+  document.getElementById('cl1-bar').style.width = Math.round(done / total * 100) + '%';
+  prog.textContent = done + ' / ' + total + ' selesai';
+  const ok = done === total;
+  prog.classList.toggle('done', ok);
+  document.getElementById('btn-next1').disabled = !ok;
+  document.getElementById('btn-fase2').disabled = !ok;
+}
+
+function tryLCard(id) {
+  const c = document.getElementById(id);
+  if (c.classList.contains('locked')) return;
+  c.classList.toggle('open');
+}
+
+function unlockL(id) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  c.classList.remove('locked');
+  c.classList.add('open');
+  const n = id.replace('lc','');
+  const lb = document.getElementById('lb' + n);
+  const ls = document.getElementById('ls' + n);
+  if (lb) lb.classList.remove('locked');
+  if (ls) { ls.className = 'l-card-status active'; ls.textContent = 'Aktif'; }
+}
+
+function markDone(id) {
+  const n = id.replace('lc','');
+  const lb = document.getElementById('lb' + n);
+  const ls = document.getElementById('ls' + n);
+  if (lb) { lb.classList.remove('locked'); lb.classList.add('done'); lb.textContent = '✓'; }
+  if (ls) { ls.className = 'l-card-status done'; ls.textContent = 'Selesai'; }
+  state.lDone[id] = true;
+  const done = Object.keys(state.lDone).length;
+  document.getElementById('l3-lbl').textContent = done + ' / 7 kolom selesai';
+  document.getElementById('l3-bar').style.width = Math.round(done / 7 * 100) + '%';
+  if (done === 7) {
+    document.getElementById('btn-next3').disabled = false;
+    document.getElementById('btn-fase4').disabled = false;
+  }
+}
+
+function switchSim(btn, pid) {
+  btn.closest('.simulator-tabs').querySelectorAll('.sim-tab').forEach(t => t.classList.remove('active'));
+  btn.closest('.simulator-box').querySelectorAll('.sim-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(pid).classList.add('active');
+}
+
+function selectAlur(a) {
+  document.getElementById('alur-a-btn').classList.toggle('selected', a === 'A');
+  document.getElementById('alur-b-btn').classList.toggle('selected', a === 'B');
+  document.getElementById('alur-a-steps').classList.toggle('visible', a === 'A');
+  document.getElementById('alur-b-steps').classList.toggle('visible', a === 'B');
+}
+
+function toggleStep(el, a) {
+  el.classList.toggle('done');
+  const steps = document.getElementById('alur-' + a + '-steps');
+  const all = steps.querySelectorAll('.step-item');
+  const done = steps.querySelectorAll('.step-item.done').length;
+  document.getElementById('done-' + a).classList.toggle('visible', done === all.length);
+}
+
+function restartAll() {
+  if (confirm('Reset semua pilihan dan progress dari awal?')) location.reload();
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded', () => {
+  renderQ('f2q1', 'qopts-f2q1');
+  renderQ('f2q2', 'qopts-f2q2');
+  renderQ('l1', 'qopts-l1');
+  renderQ('l2', 'qopts-l2');
+  renderQ('l3', 'qopts-l3');
+  renderQ('l4', 'qopts-l4');
+  renderQ('l5', 'qopts-l5');
+  renderQ('l6', 'qopts-l6');
+  renderQ('l7', 'qopts-l7');
+});
+</script>
+</body>
+</html>
